@@ -1,16 +1,16 @@
 import java.util.ArrayList;
 
 public class Node {
-    String name;
+    int id;
     ArrayList<Edge> neighbours;
 
-    public Node(String name,ArrayList<Edge> neighbours) {
+    public Node(int id,ArrayList<Edge> neighbours) {
         this.neighbours = neighbours;
-        this.name = name;
+        this.id = id;
     }
 
-    public Node(String name) {
+    public Node(int id) {
         this.neighbours = new ArrayList<Edge>();
-        this.name = name;
+        this.id = id;
     }
 }
