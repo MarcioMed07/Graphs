@@ -57,15 +57,15 @@ public class Graph {
         return null;                                                                                    //If there's no node with given id returns null
     }
 
-    public int[][] dijkstra(int source){                                                   //Gets minimum distance from source to each other node in graph using dijkstra's algorithm
-        int graphSize = this.nodes.size();                                                             //Gets number of nodes in the graph for convenience
+    public int[][] dijkstra(int source){                                                                //Gets minimum distance from source to each other node in graph using dijkstra's algorithm
+        int graphSize = this.nodes.size();                                                              //Gets number of nodes in the graph for convenience
         int dist_prev[][] = new int[graphSize][2];                                                      //Funky way to return both distance and previous node at the same time
         ArrayList<Node> unVisited = new ArrayList<Node>();                                              //Array of unvisited nodes that didn't have their minimum distance calculated yet
 
         for (int i = 0; i < graphSize; i++){                                                            //For each Node in the graph
-            dist_prev[i][0] = Integer.MAX_VALUE / 2;                                                    //Makes the distance stupidly high
-            dist_prev[i][1] = -1;                                                                       //Makes the previous Node be something impossible
-            unVisited.add(this.nodes.get(i));                                                          //Make all of them unvisited
+        dist_prev[i][0] = Integer.MAX_VALUE / 2;                                                        //Makes the distance stupidly high
+        dist_prev[i][1] = -1;                                                                           //Makes the previous Node be something impossible
+        unVisited.add(this.nodes.get(i));                                                               //Make all of them unvisited
         }
 
         dist_prev[source][0] = 0;                                                                       //The only distance we know for sure is from the source to itself, 0 to be exact
@@ -81,10 +81,10 @@ public class Graph {
             int minidx = unVisited.get(min).id;                                                         //Gets the real graph id from the Node we found to be the one in the unvisited to possess the smallest distance
             unVisited.remove(min);                                                                      //Remove this guys (let's call him minidx, for convenience) from the unvisited because we already found it's smallest distance
 
-            for (int i = 0; i < this.nodes.get(minidx).neighbours.size(); i++){                        //For each neighbour in minidx
-                Node aux = this.nodes.get(minidx).neighbours.get(i).end;                               //Did this in order to reduce typing
+            for (int i = 0; i < this.getNodeById(minidx).neighbours.size(); i++){                        //For each neighbour in minidx
+                Node aux = this.getNodeById(minidx).neighbours.get(i).end;                               //Did this in order to reduce typing
                 if(unVisited.contains(aux)){                                                            //If the neighbour is yet to be visited
-                    int maybeDist = this.nodes.get(minidx).neighbours.get(i).weight + dist_prev[minidx][0];    //calculates a possible smallest distance from source to the minidx neighbour
+                    int maybeDist = this.getNodeById(minidx).neighbours.get(i).weight + dist_prev[minidx][0];    //calculates a possible smallest distance from source to the minidx neighbour
                     if(maybeDist < dist_prev[aux.id][0] ){                                              //If the distance is in fact smaller than the one we have
                         dist_prev[aux.id][0] = maybeDist;                                               //Change it
                         dist_prev[aux.id][1] = minidx;                                                  //And make minidx it's predecessor
@@ -106,8 +106,8 @@ public class Graph {
         ArrayList<Edge> orderedEdges = new ArrayList<Edge>();                                           //Create a list to store all the edges in the graph
 
         for(int i = 0; i < graphSize; i++){                                                             //For each node in the Graph
-            for (int j = 0; j < this.nodes.get(i).neighbours.size(); j++){                             //For each edge in the node
-                orderedEdges.add(this.nodes.get(i).neighbours.get(j));                                 //Add it to the list
+            for (int j = 0; j < this.nodes.get(i).neighbours.size(); j++){                              //For each edge in the node
+                orderedEdges.add(this.nodes.get(i).neighbours.get(j));                                  //Add it to the list
             }
         }
         Collections.sort(orderedEdges);                                                                 //Sort the list based on edges weight
@@ -138,6 +138,14 @@ public class Graph {
                         orderedEdges.get(0).weight,
                         tree.getNodeById(orderedEdges.get(0).start.id)));
             }
+            else if(!tree.isConnected(tree.getNodeById(orderedEdges.get(0).start.id),tree.getNodeById(orderedEdges.get(0).end.id),new ArrayList<Node>())){ //Verify if the multiple trees of the graph are connected, if they aren't just add this edge
+                    tree.getNodeById(orderedEdges.get(0).start.id).neighbours.add(new Edge(tree.getNodeById(orderedEdges.get(0).start.id),
+                            orderedEdges.get(0).weight,
+                            tree.getNodeById(orderedEdges.get(0).end.id)));
+                    tree.getNodeById(orderedEdges.get(0).end.id).neighbours.add(new Edge(tree.getNodeById(orderedEdges.get(0).end.id),
+                            orderedEdges.get(0).weight,
+                            tree.getNodeById(orderedEdges.get(0).start.id)));
+            }
 
             orderedEdges.remove(0);                                                                //Remove starting edge from the list as it has already been added or the edges closes a cycle
         }
@@ -146,7 +154,24 @@ public class Graph {
         return tree;                                                                                    //Return the minimum spanning graph
     }
 
-    public void printAdjacencyTable(){                                                             //Prints the Adjacency Table
+    public boolean isConnected(Node start, Node end, ArrayList<Node> visited){                          //Verify if there's a path between two nodes in a graph
+        boolean connected = false;                                                                      //start as false
+        visited.add(start);                                                                             //Add starting Node to visited list
+
+        for (Edge edge : start.neighbours){                                                             //For each Edge in starting Node
+            if (edge.end == end){                                                                       //Check if Start is adjacent to End
+                return true;                                                                            //If it is than there's a path between them
+            }
+            if(!visited.contains(edge.end)) {                                                           //If it isn't check if this edge End node was already visited
+                if (!connected) {                                                                       //(Check if you already got a positive answer)
+                    connected = isConnected(edge.end, end, visited);                                    //If it wasn't than test it recursively
+                }
+            }
+        }
+        return connected;
+    }
+
+    public void printAdjacencyTable(){                                                                  //Prints the Adjacency Table
         int[][] treeTable = this.writeTable();                                                          //writes the adjacency table for the generated tree
         for (int i = 0; i < this.nodes.size(); i++) {
             for (int j = 0; j < this.nodes.size(); j++) {
@@ -162,10 +187,13 @@ public class Graph {
     public static void main(String[] args) {                                                            //Tests and presentation purpose only
         Graph graph = new Graph();
         int[][] table = new int[][]{                                                                    //Create an adjacency table here
-            {0,4,0,0},
-            {4,0,2,8},
-            {0,2,0,1},
-            {0,8,1,0}
+            {0,2,3,3,0,0,0},
+            {2,0,4,0,3,0,0},
+            {3,4,0,5,1,0,0},
+            {3,0,5,0,0,7,0},
+            {0,3,1,0,0,8,0},
+            {0,0,0,7,8,0,9},
+            {0,0,0,0,0,9,0}
         };
         graph = graph.readTable(table);                                                                 //Creates the graph based on given adjacency table
 
@@ -174,10 +202,10 @@ public class Graph {
         tree.printAdjacencyTable();
 
 
-        int source = 1;
-        int destination = 3;
+        int source = 6;
+        int destination = 1;
         int[][] dija = graph.dijkstra(source);                                                         //Get the array of distances from source to each node in the graph
-        System.out.println("Distancia de "+source+" até "+destination+" : " + Integer.toString(dija[3][0]) + "\n" + "Antecessor da menor distancia: " + Integer.toString(dija[3][1]));
+        System.out.println("Distancia de "+source+" até "+destination+" : " + Integer.toString(dija[destination][0]) + "\n" + "Antecessor da menor distancia: " + Integer.toString(dija[destination][1]));
     }
 
 }
